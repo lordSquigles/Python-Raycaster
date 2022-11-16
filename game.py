@@ -1,18 +1,23 @@
 # my headers
-import level
+import Map
 import character
 import render
+import texture
 
 # python libraries
 import pygame
 import pygame.time
 import pygame.locals
 import math
+import numpy
 
 # my constants
 DEG = math.pi / 180.0 # set a constant for 1 deg
-screenW = 1440 # screen dimensions
-screenH = 1080
+#screenW = 1440 # screen dimensions
+#screenH = 1080
+
+screenW = 400 # screen dimensions
+screenH = 300
 
 def handleInputs(player, map, dt):
     for event in pygame.event.get(): # poll pygame for inputs
@@ -63,17 +68,21 @@ def handleInputs(player, map, dt):
     player.horizon += player.up * dt # vertical look, see: y-shearing
     player.a += player.turn * DEG * dt * 0.1 # turning, increment the player's angle
                                                                                      
-    player.a %= 2 * math.pi # normalize our angle for collisions
-    if player.a < 0: player.a += 2 * math.pi
+    #player.a %= 2 * math.pi # normalize our angle for collisions
+    #if player.a < 0: player.a += 2 * math.pi
 
     # this collision detection occasionally looks a little buggy; it works very well and is 8 lines, so I do not care
     if dx > 0: # are we moving in the pos x dir?
+        #if player.x + dx + 0.5 > len(map.array[int(player.y)]): dx = 0
         if map.array[int(player.y)][int(player.x + dx + 0.5)] == 0: player.x += dx # if our dx would place us in a map unit, do not inc x
     else: # neg x dir
+        #if player.x + dx - 0.5 < 0: dx = 0
         if map.array[int(player.y)][int(player.x + dx - 0.5)] == 0: player.x += dx # dec x
     if dy > 0: # are we moving in the pos y dir?
+        #if player.y + dy + 0.5 > len(map.array): dx = 0
         if map.array[int(player.y + dy + 0.5)][int(player.x + dx)] == 0: player.y += dy # do not inc y if it would put us in a wall
     else: # neg x dir
+        #if player.y + dy - 0.5 < 0: dy = 0
         if map.array[int(player.y + dy - 0.5)][int(player.x + dx)] == 0: player.y += dy # dec y
     #if map.array[int(player.y + dy)][round(player.x + dx)] == 0: player.x += dx # collision detection
     #if map.array[round(player.y + dy)][int(player.x + dx)] == 0: player.y += dy
@@ -83,7 +92,12 @@ def main():
     window = pygame.display.set_mode((screenW, screenH)) # set up display with defined width and height
 
     player = character.Player(8, 8, math.pi / 2.0, screenH / 2) # create player object
-    map = level.Map(r"map.csv", screenH)
+    map = Map.Map(r"map.csv", screenH)
+
+    image = pygame.image.load(r'Textures/walltext1.png')
+    wallTex = texture.Texture(image)
+    #print(wallTex.array)
+    #print(wallTex.list)
 
     font = pygame.font.Font("freesansbold.ttf", 14) # for typing on screen
 
@@ -107,7 +121,7 @@ def main():
 
         #render.drawMap(player, map, window)
 
-        render.render(player, map, window, constants)
+        render.render(player, map, window, wallTex, constants)
 
         if player.stats:
             fps = font.render(" fps: " + str(1000 / dt)[:3], True, (0, 255, 0), (0, 0, 0)) # 1 frame has passed over dt, we need how many frames over 1 sec (1000 ms)
