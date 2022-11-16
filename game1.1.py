@@ -63,8 +63,8 @@ def handleInputs(player, map, dt):
     player.horizon += player.up * dt # vertical look, see: y-shearing
     player.a += player.turn * DEG * dt * 0.1 # turning, increment the player's angle
                                                                                      
-    player.a %= 2 * math.pi # normalize our angle for collisions
-    if player.a < 0: player.a += 2 * math.pi
+    #player.a %= 2 * math.pi # normalize our angle for collisions
+    #if player.a < 0: player.a += 2 * math.pi
 
     # this collision detection occasionally looks a little buggy; it works very well and is 8 lines, so I do not care
     if dx > 0: # are we moving in the pos x dir?

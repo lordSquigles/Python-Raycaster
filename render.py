@@ -1,6 +1,5 @@
 import math
 import pygame
-import numpy as np
 
 def drawMap(player, map, window):
     j = 0
@@ -14,11 +13,10 @@ def drawMap(player, map, window):
     pygame.draw.circle(window, (0, 255, 0), [player.x * map.tileSize, player.y * map.tileSize], 5) # draw player
     pygame.draw.line(window, (0, 255, 0), [player.x * map.tileSize, player.y * map.tileSize], [(player.x + 2 * math.cos(player.a)) * map.tileSize, (player.y + 2 * math.sin(player.a)) * map.tileSize ])
 
-def render(player, map, window, wallTex, constants): # my implementation of lodev's DDA algorithm ()
-    for x in range(0, constants['screenW'], 1): # I will draw slices in quantity equal to 1/4 of the screenW but 4px wide
+def render(player, map, window, constants): # my implementation of lodev's DDA algorithm ()
+    for x in range(0, constants['screenW'], 4): # I will draw slices in quantity equal to 1/4 of the screenW but 4px wide
 
         angle = player.a - constants['fovHalf'] + x * constants['fovInc']
-        #angle = player.a
 
         rayDirX = math.cos(angle) # get the unit vector for our angle
         rayDirY = math.sin(angle)
@@ -75,23 +73,9 @@ def render(player, map, window, wallTex, constants): # my implementation of lode
 
             height = int(constants['screenH'] / float(dist * math.cos(angle - player.a))) # cos gives the perp dist from "camera plane," instead of euclidean distance from player
             color = (255, 0, 0) if side == 1 else (220, 0, 0) # do some shading depending on whether we hit a NS or EW wall
-            #pygame.draw.line(window, color, [x, max(0, player.horizon - height / 2)], [x, min(constants['screenH'], player.horizon + height / 2)], 4) # draw our vertical slice
-
-            textureX = (intersectionX - int(intersectionX)) * wallTex.h if side == 1 else (intersectionY - int(intersectionY)) * wallTex.h
-            #window.blit(wallTex, (0, 0))
-            slice = np.zeros(height, dtype=int)
-            for j in range(height):
-                slice[j] = wallTex.array[int(textureX) + int(j * (wallTex.h / height)) * wallTex.w]
-                
-            #slice = [np.append(slice, wallTex.array[int(textureX) + int(j * (wallTex.h / height)) * wallTex.w]) for j in range(int(height))] # some list comprehension to make our textured slice in one line
-            j = 0
-            while j < height:
-                #print(slice[j])
-                #print(wallTex.list[int(textureX) + int(j * wallTex.h / height) * wallTex.w])
-                #pygame.draw.rect(window, wallTex.list[int(textureX) + int(j * (wallTex.h / height)) * wallTex.w], [x, int(player.horizon - height / 2) + j, 1, 1])
-                pygame.draw.rect(window, slice[j], [x, int(player.horizon - height / 2) + j, 1, 1])
-                j += 1
-
+            pygame.draw.line(window, color, [x, max(0, player.horizon - height / 2)], [x, min(constants['screenH'], player.horizon + height / 2)], 4) # draw our vertical slice
+            #textureSlice = texSlice(texture, )
+            #tex
             #for i in range(4):
             #    for j in range(height):
             #        window.set_at(x, max(0, player.horizon - height / 2))
