@@ -8,15 +8,14 @@ import texture
 import pygame
 import pygame.time
 import pygame.locals
-import math
-import numpy
+import numpy as np
 
 # my constants
-DEG = math.pi / 180.0 # set a constant for 1 deg
+DEG = np.pi / 180.0 # set a constant for 1 deg
 #screenW = 1440 # screen dimensions
 #screenH = 1080
 
-screenW = 400 # screen dimensions
+screenW = 400 # screen dimensions multiplied by 4. I use this small resolution because python can't handle much higher.
 screenH = 300
 
 def handleInputs(player, map, dt):
@@ -62,66 +61,44 @@ def handleInputs(player, map, dt):
                     player.turn = 0
                 case pygame.K_LEFT:
                     player.turn = 0
-    dx = player.forwards * math.cos(player.a) * 0.01 * dt + player.sideways * math.cos(player.a - math.pi / 2) * 0.01 * dt # move our player forwards in the dir they are facing 
-    dy = player.forwards * math.sin(player.a) * 0.01 * dt + player.sideways * math.sin(player.a - math.pi / 2) * 0.01 * dt
+    dx = player.forwards * np.cos(player.a) * 0.01 * dt + player.sideways * np.cos(player.a - np.pi / 2) * 0.01 * dt # move our player forwards in the dir they are facing 
+    dy = player.forwards * np.sin(player.a) * 0.01 * dt + player.sideways * np.sin(player.a - np.pi / 2) * 0.01 * dt
 
-    player.horizon += player.up * dt # vertical look, see: y-shearing
+    player.horizon += player.up * 0.5 * dt # vertical look, see: y-shearing
     player.a += player.turn * DEG * dt * 0.1 # turning, increment the player's angle
                                                                                      
-    #player.a %= 2 * math.pi # normalize our angle for collisions
-    #if player.a < 0: player.a += 2 * math.pi
-
     # this collision detection occasionally looks a little buggy; it works very well and is 8 lines, so I do not care
     if dx > 0: # are we moving in the pos x dir?
-        #if player.x + dx + 0.5 > len(map.array[int(player.y)]): dx = 0
-        if map.array[int(player.y)][int(player.x + dx + 0.5)] == 0: player.x += dx # if our dx would place us in a map unit, do not inc x
+        if map.array[int(player.x + dx + 0.5) + int(player.y) * map.w] == 0: player.x += dx # if our dx would place us in a map unit, do not inc x
     else: # neg x dir
-        #if player.x + dx - 0.5 < 0: dx = 0
-        if map.array[int(player.y)][int(player.x + dx - 0.5)] == 0: player.x += dx # dec x
+        if map.array[int(player.x + dx - 0.5) + int(player.y) * map.w] == 0: player.x += dx # dec x
     if dy > 0: # are we moving in the pos y dir?
-        #if player.y + dy + 0.5 > len(map.array): dx = 0
-        if map.array[int(player.y + dy + 0.5)][int(player.x + dx)] == 0: player.y += dy # do not inc y if it would put us in a wall
+        if map.array[int(player.x) + int(player.y + dy + 0.5) * map.w] == 0: player.y += dy # do not inc y if it would put us in a wall
     else: # neg x dir
-        #if player.y + dy - 0.5 < 0: dy = 0
-        if map.array[int(player.y + dy - 0.5)][int(player.x + dx)] == 0: player.y += dy # dec y
-    #if map.array[int(player.y + dy)][round(player.x + dx)] == 0: player.x += dx # collision detection
-    #if map.array[round(player.y + dy)][int(player.x + dx)] == 0: player.y += dy
+        if map.array[int(player.x) + int(player.y + dy - 0.5) * map.w] == 0: player.y += dy # dec y
 
 def main():
     pygame.init() # init pygame
-    window = pygame.display.set_mode((screenW, screenH)) # set up display with defined width and height
+    window = pygame.display.set_mode((screenW * 2, screenH * 2)) # set up display with defined width and height
 
-    player = character.Player(8, 8, math.pi / 2.0, screenH / 2) # create player object
-    map = Map.Map(r"map.csv", screenH)
-
-    image = pygame.image.load(r'Textures/walltext1.png')
-    wallTex = texture.Texture(image)
-    #print(wallTex.array)
-    #print(wallTex.list)
+    player = character.Player(8, 8, np.pi / 2.0, screenH, screenW) # create player object
+    map = Map.Map(r"map.csv", screenH) # load our map
+    wallTex = texture.Texture(pygame.image.load(r'Textures/walltext3.png')) # load our wall textures
 
     font = pygame.font.Font("freesansbold.ttf", 14) # for typing on screen
 
     prev = 0 # get the initial time
-
-    # lets make some constants to save conputation time
-    constants = {}
-    constants['fovInc'] = player.fov / screenW
-    constants['fovHalf'] = player.fov / 2
-    constants['screenW'] = screenW
-    constants['screenH'] = screenH
 
     while True: # game loop
         now = pygame.time.get_ticks() # get the current time
         dt = now - prev # delta time from subtracting last time
         prev = now # set last time to this one
 
-        handleInputs(player, map,dt) # keybinds
+        handleInputs(player, map, dt) # keybinds
 
         window.fill((255, 255, 255))
 
-        #render.drawMap(player, map, window)
-
-        render.render(player, map, window, wallTex, constants)
+        render.render(player, map, window, wallTex, screenW, screenH)
 
         if player.stats:
             fps = font.render(" fps: " + str(1000 / dt)[:3], True, (0, 255, 0), (0, 0, 0)) # 1 frame has passed over dt, we need how many frames over 1 sec (1000 ms)
