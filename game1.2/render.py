@@ -79,13 +79,18 @@ def render(player, map, window, wallTex, screenW, screenH): # my implementation 
             # I got the following idea from ssloy's tinyracaster project on github
             textureX = (intersectionX - int(intersectionX)) * wallTex.h if side == 1 else (intersectionY - int(intersectionY)) * wallTex.h # determing where horizontally to sample from on our texture
 
-            rectHeight = height / wallTex.h # check if height is larger than wallText.h. If so, draw rectangles that scale with this height instead of wasting time sampling the same pixels
-            
-            for j in range(height):
-                #window.set_at((x, int(player.horizon - height / 2) + j), int(wallTex.array[int(textureX) + int(j * (wallTex.h / height)) * wallTex.w]))
-                pygame.draw.rect(window, int(wallTex.array[int(textureX) + int(j * (wallTex.h / height)) * wallTex.w]), [x * 2, (int(player.horizon - height / 2) + j) * 2, 2, 2]) # draw my slice
-            #for j in range(int(height / 2)):
-            #    pygame.draw.rect(window, int(wallTex.array[int(textureX) + int(j * (wallTex.h / height) * 2) * wallTex.w]), [x, int(player.horizon - height / 2) + j * 2, 2, 2]) # draw my slice
+            # this piece is original
+            pxHeight = height / wallTex.h # check if height is larger than wallText.h. If so, draw rectangles that scale with this height instead of wasting time sampling the same pixels
+
+            if pxHeight < 1:
+                for j in range(height):
+                    #window.set_at((x, int(player.horizon - height / 2) + j), int(wallTex.array[int(textureX) + int(j * (wallTex.h / height)) * wallTex.w]))
+                    pygame.draw.rect(window, int(wallTex.array[int(textureX) + int(j * (wallTex.h / height)) * wallTex.w]), [x * 2, (int(player.horizon - height / 2) + j) * 2, 2, 2]) # draw my slice
+                #for j in range(int(height / 2)):
+                #    pygame.draw.rect(window, int(wallTex.array[int(textureX) + int(j * (wallTex.h / height) * 2) * wallTex.w]), [x, int(player.horizon - height / 2) + j * 2, 2, 2]) # draw my slice
+            else:
+                for j in range(0, height, int(pxHeight)):
+                    pygame.draw.rect(window, int(wallTex.array[int(textureX) + j * wallTex.w]), [x * 2, (int(player.horizon - height / 2) + j) * 2, 2, 2])
 
         pygame.draw.line(window, (255, 255, 255, 20), [screenW - 8, screenH], [screenW + 8, screenH], 2)# draw crosshair
         pygame.draw.line(window, (255, 255, 255, 20), [screenW, screenH - 8], [screenW, screenH + 8], 2)# draw crosshair
