@@ -1,7 +1,5 @@
-import numpy as np
 class Map:
-    array = np.zeros(1, dtype=int)
-    list = []
+    array = []
     w = 0
     h = 0
     tileSize = 0
@@ -10,15 +8,10 @@ class Map:
         mapFile = mf.read().split("\n")
         mapFile.pop(-1)
 
-        self.h = len(mapFile) # width of 1st element
-        self.w = len(mapFile[0].split(",")) # number of elements
+        for i in mapFile:
+            self.array.append([int(j) for j in i.replace(" ", "").split(",")])
 
-        self.array = np.zeros(self.w * self.h) # re-create our map array at the proper length
-
-        for j in range(self.h):
-            row = mapFile[j].replace(" ", "").split(",")
-            for i in range(len(row)):
-                self.array[i + j * len(mapFile)] = row[i]
-            #self.list.append([int(j) for j in i.replace(" ", "").split(",")])
+        self.w = len(self.array) # width of 1st element
+        self.h = len(self.array[0])# number of elements
 
         self.tileSize = screenH / len(self.array)
