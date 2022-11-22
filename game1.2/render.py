@@ -1,19 +1,7 @@
 import pygame
 import numpy as np
 
-#def drawMap(player, map, window):
-#    j = 0
-#    while j < len(map.array): # draw our map
-#        i = 0
-#        while i < len(map.array[j]):
-#            color = (255, 0, 0) if map.array[j][i] == 0 else (0, 0, 255) # change color on walls
-#            pygame.draw.rect(window, color, [i * map.tileSize, j * map.tileSize, map.tileSize - 1, map.tileSize - 1])
-#            i += 1
-#        j += 1
-#    pygame.draw.circle(window, (0, 255, 0), [player.x * map.tileSize, player.y * map.tileSize], 5) # draw player
-#    pygame.draw.line(window, (0, 255, 0), [player.x * map.tileSize, player.y * map.tileSize], [(player.x + 2 * np.cos(player.a)) * map.tileSize, (player.y + 2 * np.sin(player.a)) * map.tileSize ])
-
-def render(player, map, window, wallTex, screenW, screenH): # my implementation of lodev's DDA algorithm ()
+def render(player, map, window, wallTex, screenW, screenH, pxMult): # my implementation of lodev's DDA algorithm (https://lodev.org/cgtutor/raycasting.html)
     for x in range(0, screenW, 1): # I will draw slices in quantity equal to 1/4 of the screenW but 4px wide
 
         angle = player.a - player.fovHalf + x * player.fovInc
@@ -50,7 +38,7 @@ def render(player, map, window, wallTex, screenW, screenH): # my implementation 
 
         hit = False # for breaking the loop
         dist = 0 # distance to calc from
-        while hit == False:
+        while hit == False: # march our ray based on previous calculations
             if sideDistX < sideDistY: # we increment based on the smallest sideDist so far
                 sideDistX += deltaDistX # step along our ray (float precision walk)
                 mapX += stepX # step through our map (approximate integer walk)
@@ -66,35 +54,34 @@ def render(player, map, window, wallTex, screenW, screenH): # my implementation 
                 if map.array[mapX + mapY * map.w] > 0: # did we hit a wall?
                     hit = True # Yes!
             else: break
-        if hit:
+        if hit: # we hit a wall!
+            texNum = map.array[mapX + mapY * map.w]
             dist -= deltaDistX if side == 0 else deltaDistY # subtract our extra step
 
             intersectionX = player.x + rayDirX * dist # calculate our intersection point (based on javid9x's implementation of DDA algorithm)
             intersectionY = player.y + rayDirY * dist
 
-            height = int(screenH / float(dist * np.cos(angle - player.a))) # cos gives the perp dist from "camera plane," instead of euclidean distance from player
+            height = int(screenH / float(dist * np.cos(angle - player.a))) # cos gives the perp dist from "camera plane," instead of euclidean distance from player (see lodev's example)
             #color = (255, 0, 0) if side == 1 else (220, 0, 0) # do some shading depending on whether we hit a NS or EW wall
-            #pygame.draw.line(window, color, [x, max(0, player.horizon - height / 2)], [x, min(screenH, player.horizon + height / 2)], 4) # draw our vertical slice
+            #pygame.draw.line(window, color, [x, max(0, player.horizon - height / 2)], [x, min(screenH, player.horizon + height / 2)], 4) # draw our vertical slice # how we used to do things
 
-            # I got the following idea from ssloy's tinyracaster project on github
+            # I got the following idea from ssloy's tinyracaster project (https://github.com/ssloy/tinyraycaster)
             textureX = (intersectionX - int(intersectionX)) * wallTex.h if side == 1 else (intersectionY - int(intersectionY)) * wallTex.h # determing where horizontally to sample from on our texture
 
-            # this piece is original
+            # The following part of the texture-mapping algorithm is all original!
             pxHeight = height / wallTex.h # check if height is larger than wallText.h. If so, draw rectangles that scale with this height instead of wasting time sampling the same pixels
 
             if pxHeight < 1:
                 for j in range(height):
                     #window.set_at((x, int(player.horizon - height / 2) + j), int(wallTex.array[int(textureX) + int(j * (wallTex.h / height)) * wallTex.w]))
-                    pygame.draw.rect(window, int(wallTex.array[int(textureX) + int(j * (wallTex.h / height)) * wallTex.w]), [x * 2, (int(player.horizon - height / 2) + j) * 2, 2, 2]) # draw my slice
+                    pygame.draw.rect(window, int(wallTex.array[int(textureX) * texNum + int(j * (wallTex.h / height)) * wallTex.w * texNum]), [x * pxMult, (int(player.horizon - height / 2) + j) * pxMult, pxMult, pxMult]) # draw my slice
                 #for j in range(int(height / 2)):
                 #    pygame.draw.rect(window, int(wallTex.array[int(textureX) + int(j * (wallTex.h / height) * 2) * wallTex.w]), [x, int(player.horizon - height / 2) + j * 2, 2, 2]) # draw my slice
             else:
-                j = 0
-                pxHeight /= 1
-                while j < wallTex.h:
+                for j in range(wallTex.h): # This bit, I do so that I do not waste my time sampling the same px again and again (like in ssloy's tinyraycaster)
                 #for j in range(0, height, int(pxHeight)):
-                    pygame.draw.rect(window, int(wallTex.array[int(textureX) + j * wallTex.w]), [x * 2, (int(player.horizon - height / 2) + j * pxHeight) * 2, 2, 2 * pxHeight])
-                    j += 1
+                    # adding 1 here concedes some redundancy but fixes a more jarring graphical bug
+                    pygame.draw.rect(window, int(wallTex.array[int(textureX) * texNum + j * wallTex.w * texNum]), [x * pxMult, (int(player.horizon - height / 2) + j * pxHeight) * pxMult, pxMult, pxMult * pxHeight + 1])
 
         pygame.draw.line(window, (255, 255, 255, 20), [screenW - 8, screenH], [screenW + 8, screenH], 2)# draw crosshair
         pygame.draw.line(window, (255, 255, 255, 20), [screenW, screenH - 8], [screenW, screenH + 8], 2)# draw crosshair
