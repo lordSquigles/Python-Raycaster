@@ -84,7 +84,7 @@ def main():
 
     player = character.Player(8, 8, np.pi / 2.0, screenH, screenW) # create player object
     map = Map.Map(r"map.csv", screenH) # load our map
-    wallTex = texture.Texture(pygame.image.load(r'Textures/walltext2.png')) # load our wall textures
+    wallTex = texture.Texture(pygame.image.load(r'Textures/converted.png')) # load our wall textures
 
     font = pygame.font.Font("freesansbold.ttf", 14) # for typing on screen
 
