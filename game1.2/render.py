@@ -54,7 +54,7 @@ def render(player, map, window, wallTex, screenW, screenH, pxMult): # my impleme
             if mapX >= 0 and mapX < map.w and mapY >= 0 and mapY < map.h: # make sure that we are within our map
                 texNum = int(map.array[mapX + mapY * map.w]) # get the number in the square to determine which texture we are using
                 if texNum > 0: # did we hit a wall?
-                    texNum -= 1 # we want to start at 0 in our texture array, not 1 whole texture in
+                    texNum = min(texNum - 1, wallTex.num - 1) # we want to start at 0 in our texture array, not 1 whole texture in; I use min to make a default for missing textures; Eg, texNum = 23, but there are 6 textures
                     hit = True # Yes!
             else: break
         if hit: # we hit a wall!
@@ -76,13 +76,15 @@ def render(player, map, window, wallTex, screenW, screenH, pxMult): # my impleme
             if pxHeight < 1:
                 for j in range(height):
                     #window.set_at((x, int(player.horizon - height / 2) + j), int(wallTex.array[int(textureX) + int(j * (wallTex.h / height)) * wallTex.w]))
-                    pygame.draw.rect(window, int(wallTex.array[int(textureX) + texNum * wallTex.h + int(j * (wallTex.h / height)) * wallTex.w]), [x * pxMult, (int(player.horizon - height / 2) + j) * pxMult, pxMult, pxMult]) # draw my slice
+                    pygame.draw.rect(window, int(wallTex.array[(int(textureX) + texNum * wallTex.h) + int(j * (wallTex.h / height)) * wallTex.w]), [x * pxMult, (int(player.horizon - height / 2) + j) * pxMult, pxMult, pxMult]) # draw my slice
                 #for j in range(int(height / 2)):
                 #    pygame.draw.rect(window, int(wallTex.array[int(textureX) + int(j * (wallTex.h / height) * 2) * wallTex.w]), [x, int(player.horizon - height / 2) + j * 2, 2, 2]) # draw my slice
             else:
                 for j in range(wallTex.h): # This bit, I do so that I do not waste my time sampling the same px again and again (like in ssloy's tinyraycaster)
                 #for j in range(0, height, int(pxHeight)):
                     # adding 1 here concedes some redundancy but fixes a more jarring graphical bug
+                    #pygame.draw.rect(window, int(wallTex.array[1]), [x * pxMult, (int(player.horizon - height / 2) + j * pxHeight) * pxMult, pxMult, pxMult * pxHeight + 1])
+                    #pygame.draw.rect(window, int(wallTex.array[int(textureX) + texNum * wallTex.h + j * wallTex.w]), [x * pxMult, (int(player.horizon - height / 2) + j * pxHeight) * pxMult, pxMult, pxMult * pxHeight + 1])
                     pygame.draw.rect(window, int(wallTex.array[int(textureX) + texNum * wallTex.h + j * wallTex.w]), [x * pxMult, (int(player.horizon - height / 2) + j * pxHeight) * pxMult, pxMult, pxMult * pxHeight + 1])
 
         pygame.draw.line(window, (255, 255, 255, 20), [screenW - 8, screenH], [screenW + 8, screenH], 2)# draw crosshair

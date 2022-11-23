@@ -1,6 +1,6 @@
 # my headers
 import Map
-import character
+import Player
 import render
 import texture
 
@@ -69,47 +69,73 @@ def handleInputs(player, map, dt):
                                                                                      
     # this collision detection occasionally looks a little buggy; it works very well and is 8 lines, so I do not care
     if dx > 0: # are we moving in the pos x dir?
-        if map.array[int(player.x + dx + 0.5) + int(player.y) * map.w] == 0: player.x += dx # if our dx would place us in a map unit, do not inc x
+        try:
+            if map.array[int(player.x + dx + 0.5) + int(player.y) * map.w] == 0: player.x += dx # if our dx would place us in a map unit, do not inc x 
+        except:
+            return(1)
     else: # neg x dir
-        if map.array[int(player.x + dx - 0.5) + int(player.y) * map.w] == 0: player.x += dx # dec x
+        try:
+            if map.array[int(player.x + dx - 0.5) + int(player.y) * map.w] == 0: player.x += dx # dec x
+        except:
+            return(1)
     if dy > 0: # are we moving in the pos y dir?
-        if map.array[int(player.x) + int(player.y + dy + 0.5) * map.w] == 0: player.y += dy # do not inc y if it would put us in a wall
+        try:
+            if map.array[int(player.x) + int(player.y + dy + 0.5) * map.w] == 0: player.y += dy # do not inc y if it would put us in a wall
+        except:
+            return(1)
     else: # neg x dir
-        if map.array[int(player.x) + int(player.y + dy - 0.5) * map.w] == 0: player.y += dy # dec y
+        try:
+            if map.array[int(player.x) + int(player.y + dy - 0.5) * map.w] == 0: player.y += dy # dec y
+        except:
+            return(1)
 
 def main():
     pxMult = 800 / screenW # our pixel multiplier will allow us to scale-up the screen after rendering at a smaller resolution
     pygame.init() # init pygame
     window = pygame.display.set_mode((screenW * pxMult, screenH * pxMult)) # set up display with defined width and height
 
-    player = character.Player(8, 8, np.pi / 2.0, screenH, screenW) # create player object
-    map = Map.Map(r"map.csv", screenH) # load our map
-    wallTex = texture.Texture(pygame.image.load(r'Textures/converted.png')) # load our wall textures
+    for level in range(3):
+        player = Player.Player(8, 8, np.pi / 2.0, screenH, screenW) # create player object
+        try: map = Map.Map(r"Levels/" + str(level) + ".csv", screenH) # load our map
+        except:
+            print('There is no "next level,"; exiting...')
+            break
+        wallTex = texture.Texture(pygame.image.load(r'Textures/converted.png')) # load our wall textures
 
-    font = pygame.font.Font("freesansbold.ttf", 14) # for typing on screen
+        font = pygame.font.Font("freesansbold.ttf", 14) # for typing on screen
+        print("Level", level)
+        levelText = font.render("Level " + str(level) + " ", True, (0, 255, 0))
+        levelBox = levelText.get_rect()
+        levelBox.right = screenW * pxMult
 
-    prev = 0 # get the initial time
+        prev = 0 # get the initial time
 
-    while True: # game loop
-        now = pygame.time.get_ticks() # get the current time
-        dt = now - prev # delta time from subtracting last time
-        prev = now # set last time to this one
+        while True: # game loop
+            now = pygame.time.get_ticks() # get the current time
+            dt = now - prev # delta time from subtracting last time
+            prev = now # set last time to this one
 
-        handleInputs(player, map, dt) # keybinds
+            if handleInputs(player, map, dt) == 1: # keybinds
+                break
 
-        window.fill((0, 120, 80))
-        pygame.draw.rect(window, (0, 80, 120), [0, 0, screenW * pxMult, player.horizon * pxMult])
+            window.fill((0, 120, 80))
+            pygame.draw.rect(window, (0, 80, 120), [0, 0, screenW * pxMult, player.horizon * pxMult])
 
-        render.render(player, map, window, wallTex, screenW, screenH, pxMult)
+            render.render(player, map, window, wallTex, screenW, screenH, pxMult)
+            timeLeft = 60 - now / 1000
 
-        if player.stats:
-            fps = font.render(" fps: " + str(1000 / dt)[:3], True, (0, 255, 0), (0, 0, 0)) # 1 frame has passed over dt, we need how many frames over 1 sec (1000 ms)
-            location = font.render(" X: " + str(player.x)[:5] + ", Y: " + str(player.y)[:5] + ", \u03B8: " + str(player.a)[:6], True, (0, 255, 0), (0, 0, 0)) # 1 frame has passed over dt, we need how many frames over 1 sec (1000 ms)
-            #looking = font.render("Looking at: (" + str(player.la[0]) + ", " + str(player.la[1]) + ")")
-            window.blit(fps, (0, 0))
-            window.blit(location, (0, 15))
+            time = font.render(" Timer: " + str(timeLeft), True, (0, 255, 0))
+            if timeLeft < 0: break
+            window.blit(time, (screenW * pxMult / 2 - 100, 0))
+            if player.stats:
+                fps = font.render(" fps: " + str(1000 / dt)[:3], True, (0, 255, 0)) # 1 frame has passed over dt, we need how many frames over 1 sec (1000 ms)
+                location = font.render(" X: " + str(player.x)[:5] + ", Y: " + str(player.y)[:5] + ", \u03B8: " + str(player.a)[:6], True, (0, 255, 0)) # 1 frame has passed over dt, we need how many frames over 1 sec (1000 ms)
+                #looking = font.render("Looking at: (" + str(player.la[0]) + ", " + str(player.la[1]) + ")")
+                window.blit(levelText, levelBox)
+                window.blit(fps, (0, 0))
+                window.blit(location, (0, 15))
 
-        pygame.display.update()
-    input()
+            pygame.display.update()
+    pygame.quit()
     return
 main()

@@ -4,6 +4,7 @@ import numpy as np
 class Texture():
     h = 0
     w = 0
+    num = 0
     array = np.empty(1, dtype=int)
     def __init__(self, image):
         pxArray = pygame.PixelArray(image)
@@ -13,3 +14,4 @@ class Texture():
                 self.array[x + y * image.get_width()] = int(pxArray[x, y]) # much faster to make a pixel array than to deal with pygame's "Surface" crap
         self.h = int(image.get_height())
         self.w = int(image.get_width())
+        self.num = int(self.w / self.h)
