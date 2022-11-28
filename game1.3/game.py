@@ -65,7 +65,7 @@ def handleInputs(player, map, dt):
     dy = player.forwards * np.sin(player.a) * 0.008 * dt + player.sideways * np.sin(player.a - np.pi / 2) * 0.008 * dt
 
     player.horizon += player.up * 0.25 * dt # vertical look, see: y-shearing
-    player.a += player.turn * DEG * dt * 0.08 # turning, increment the player's angle
+    player.a += player.turn * DEG * dt * 0.13 # turning, increment the player's angle
                                                                                      
     # this collision detection occasionally looks a little buggy; it works very well and is 8 lines, so I do not care
     if dx > 0: # are we moving in the pos x dir?
@@ -101,6 +101,7 @@ def main():
             print('There is no "next level,"; exiting...')
             break
         wallTex = texture.Texture(pygame.image.load(r'Textures/converted2.png')) # load our wall textures
+        floorTex = texture.Texture(pygame.image.load(r'Textures/floors.png')) # load our floor textures
 
         font = pygame.font.Font("freesansbold.ttf", 14) # for typing on screen
         print("Level", level)
@@ -121,7 +122,8 @@ def main():
             window.fill((0, 120, 80))
             pygame.draw.rect(window, (0, 80, 120), [0, 0, screenW * pxMult, player.horizon * pxMult])
 
-            render.render(player, map, window, wallTex, screenW, screenH, pxMult)
+            render.drawFloors(window, player, floorTex, screenH, screenW, pxMult)
+            #render.render(player, map, window, wallTex, screenW, screenH, pxMult)
             timeLeft = 60 * (level + 1) - now / 1000
 
             time = font.render(" Timer: " + str(timeLeft)[:5], True, (0, 255, 0))

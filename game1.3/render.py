@@ -76,13 +76,55 @@ def render(player, map, window, wallTex, screenW, screenH, pxMult): # my impleme
             if pxHeight < 1:
                 for j in range(height):
                     #window.set_at((x, int(player.horizon - height / 2) + j), int(wallTex.array[int(textureX) + int(j * (wallTex.h / height)) * wallTex.w]))
-                    pygame.draw.rect(window, int(wallTex.array[(int(textureX) + texNum * wallTex.h) + int(j * (wallTex.h / height)) * wallTex.w]), [x * pxMult, (int(player.horizon - height / 2) + j) * pxMult, pxMult, pxMult]) # draw my slice
+                    color = int(wallTex.array[(int(textureX) + texNum * wallTex.h) + int(j * (wallTex.h / height)) * wallTex.w]) # get the color of the pixel
+                    if color & 255 != 0: pygame.draw.rect(window, color, [x * pxMult, (int(player.horizon - height / 2) + j) * pxMult, pxMult, pxMult]) # draw my slice
                 #for j in range(int(height / 2)):
                 #    pygame.draw.rect(window, int(wallTex.array[int(textureX) + int(j * (wallTex.h / height) * 2) * wallTex.w]), [x, int(player.horizon - height / 2) + j * 2, 2, 2]) # draw my slice
             else:
                 for j in range(wallTex.h): # This bit, I do so that I do not waste my time sampling the same px again and again (like in ssloy's tinyraycaster)
                     # adding 1 here concedes some redundancy but fixes a more jarring graphical bug
-                    pygame.draw.rect(window, int(wallTex.array[int(textureX) + texNum * wallTex.h + j * wallTex.w]), [x * pxMult, (int(player.horizon - height / 2) + j * pxHeight) * pxMult, pxMult, pxMult * pxHeight + 1])
+                    color = int(wallTex.array[int(textureX) + texNum * wallTex.h + j * wallTex.w]) # get the color of the pixel
+                    if color & 255 != 0: pygame.draw.rect(window, color, [x * pxMult, (int(player.horizon - height / 2) + j * pxHeight) * pxMult, pxMult, pxMult * pxHeight + 1]) 
+                    # Only draw the pixel if it is opaque; this will allow us to make gates, etc. through which the "outside" is visible. 
+                    # If I want map tiles to be visible behind transparent pixels, make a method for testing if a tile has transparency,
+                    # then casting a ray until the next one is hit, and drawing that one first.
 
         pygame.draw.line(window, (255, 255, 255, 20), [screenW - 8, screenH], [screenW + 8, screenH], 2)# draw crosshair
         pygame.draw.line(window, (255, 255, 255, 20), [screenW, screenH - 8], [screenW, screenH + 8], 2)# draw crosshair
+
+def drawFloors(window, player, floorTex, screenH, screenW, pxMult): # (https://lodev.org/cgtutor/raycasting2.html)
+    for y in range(int(screenH / 2 + 1), screenH, 1):
+
+        # Current y position compared to the center of the screen (the horizon)
+        p = y - screenH / 2
+        #if p == 0: p = 1
+
+        # Horizontal distance from the camera to the floor for the current row.
+        # 0.5 is the z position exactly in the middle between floor and ceiling.
+        rowDist = 0.5 / p
+
+        floorStepX = rowDist * player.fov / screenW;
+        floorStepY = rowDist * player.fov / screenW;
+
+        # real world coordinates of the leftmost column. This will be updated as we step to the right.
+        floorX = player.x + rowDist * np.sin(player.a - player.fov / 2);
+        floorY = player.y + rowDist * np.cos(player.a - player.fov / 2);
+
+        for x in range(screenW):
+            cellX = int(floorX)
+            cellY = int(floorY)
+
+            #tx = int(wallTex.w * (floorX - cellX)) & (wallTex.w - 1)
+            #ty = int(wallTex.h * (floorY - cellY)) & (wallTex.h - 1)
+
+            tx = int((floorX - cellX) * floorTex.h)
+            ty = int((floorY - cellY) * floorTex.h)
+
+            floorX += floorStepX
+            floorY += floorStepY
+
+            texNum = 0
+
+            color = int(floorTex.array[tx + texNum * floorTex.h + ty * floorTex.w])
+            # color = 0
+            pygame.draw.rect(window, color, [x * pxMult, y * pxMult, pxMult, pxMult]) 
